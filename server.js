@@ -6,63 +6,29 @@ const cors = require("cors");
 
 const app = express();
 
-// ✅ CORS - Local testing ke liye
+// CORS
 app.use(cors({
-  origin: [
-    'http://localhost:5173',      // Vite dev server
-    'http://localhost:3000',      // React dev server  
-    'http://localhost:5000',      // Aapka local
-    '*'                           // ⚠️ Temporary - baad mein Firebase URL add karein
-  ],
+  origin: '*',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
 }));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Check env variables
+console.log("Checking environment variables...");
+console.log("B2_KEY_ID exists:", !!process.env.B2_KEY_ID);
+console.log("B2_APP_KEY exists:", !!process.env.B2_APP_KEY);
+console.log("B2_BUCKET_ID exists:", !!process.env.B2_BUCKET_ID);
+console.log("B2_BUCKET_NAME exists:", !!process.env.B2_BUCKET_NAME);
+
 const b2 = new B2({
   applicationKeyId: process.env.B2_KEY_ID,
   applicationKey: process.env.B2_APP_KEY,
 });
 
-// ✅ Upload Endpoint
+// Upload Endpoint
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    await b2.authorize();
-    
-    const uploadUrlData = await b2.getUploadUrl({
-      bucketId: process.env.B2_BUCKET_ID,
-    });
-
-    const fileName = `images/${Date.now()}-${req.file.originalname}`;
-
-    await b2.uploadFile({
-      uploadUrl: uploadUrlData.data.uploadUrl,
-      uploadAuthToken: uploadUrlData.data.authorizationToken,
-      fileName: fileName,
-      data: req.file.buffer,
-    });
-
-    const fileUrl = `https://f005.backblazeb2.com/file/${process.env.B2_BUCKET_NAME}/${fileName}`;
-
-    console.log("✅ Uploaded:", fileUrl);
-    res.json({ success: true, url: fileUrl });
-
-  } catch (err) {
-    console.error("❌ Error:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get("/", (req, res) => {
-  res.send("B2 Server Running ✅");
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+      return res.status(400).
