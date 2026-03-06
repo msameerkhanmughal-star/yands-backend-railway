@@ -6,14 +6,13 @@ const cors = require("cors");
 
 const app = express();
 
-// ✅ CORS - Aapke frontend ke liye
+// ✅ CORS - Local testing ke liye
 app.use(cors({
   origin: [
     'http://localhost:5173',      // Vite dev server
-    'http://localhost:3000',      // React dev server
+    'http://localhost:3000',      // React dev server  
     'http://localhost:5000',      // Aapka local
-    'https://yands-frontend.web.app',  // Firebase hosting (jab host karein)
-    '*'  // Temporary testing ke liye
+    '*'                           // ⚠️ Temporary - baad mein Firebase URL add karein
   ],
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
@@ -26,14 +25,13 @@ const b2 = new B2({
   applicationKey: process.env.B2_APP_KEY,
 });
 
-// ✅ Upload Endpoint - FIXED
+// ✅ Upload Endpoint
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // Fresh authorize har upload pe
     await b2.authorize();
     
     const uploadUrlData = await b2.getUploadUrl({
@@ -49,7 +47,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       data: req.file.buffer,
     });
 
-    // ✅ URL mein SPACE nahi hai ab!
     const fileUrl = `https://f005.backblazeb2.com/file/${process.env.B2_BUCKET_NAME}/${fileName}`;
 
     console.log("✅ Uploaded:", fileUrl);
